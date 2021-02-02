@@ -1,8 +1,5 @@
 import json
-import os
-import re
 from datetime import datetime
-from pprint import pprint
 
 import boto3
 from cachetools import TTLCache
@@ -10,14 +7,11 @@ from requests import request
 
 from sp_api.auth import AccessTokenClient, AccessTokenResponse
 from .base_client import BaseClient
+from .exceptions import get_exception_for_code
 from .marketplaces import Marketplaces
 from sp_api.base import AWSSigV4
 
 role_cache = TTLCache(maxsize=10, ttl=3600)
-
-
-class SellingApiException(BaseException):
-    pass
 
 
 class Client(BaseClient):
@@ -106,7 +100,8 @@ class Client(BaseClient):
 
         e = res.json().get('errors', None)
         if e:
-            raise SellingApiException(e)
+            exception = get_exception_for_code(res.status_code)
+            raise exception(e)
         return res
 
     def _request_grantless_operation(self, path: str, *, data: dict = None, params: dict = None):

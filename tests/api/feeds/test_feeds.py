@@ -1,22 +1,31 @@
 from sp_api.api import Feeds
-from sp_api.base import Marketplaces
+from sp_api.base import SellingApiBadRequestException, SellingApiServerException
 
 
-def test_submit_feed():
-    res = Feeds(marketplace=Marketplaces.DE).submit_feed('POST_PRODUCT_DATA', open('test.xml'), 'application/xml')
-    print(res)
-
-
-def test_create_doc():
-    res = Feeds(marketplace=Marketplaces.DE).create_feed_document(open('test.xml'), 'application/xml')
+def test_create_feed():
+    res = Feeds().create_feed('POST_PRODUCT_DATA', '3d4e42b5-1d6e-44e8-a89c-2abfca0625bb',
+                              marketplaceIds=["ATVPDKIKX0DER", "A1F83G8C2ARO7P"])
+    assert res.payload.get('feedId') == '3485934'
 
 
 def test_get_feed():
-    feed_id = '50670018654'
-    print(Feeds(marketplace=Marketplaces.DE).get_feed(feed_id))
+    feed_id = 'feedId1'
+    res = Feeds().get_feed(feed_id)
+    assert res.payload.get('feedId') == 'FeedId1'
+    assert res.payload.get('processingStatus') == 'CANCELLED'
 
 
-def test_get_feed_results():
-    feed_doc_id = ''
-    print(Feeds(marketplace=Marketplaces.DE).get_feed_result_document(feed_doc_id))
+def test_get_feed_expect_400():
+    try:
+        Feeds().get_feed('badFeedId1')
+    except SellingApiBadRequestException as br:
+        assert type(br) == SellingApiBadRequestException
+        assert br.code == 400
 
+
+def test_get_feed_expect_500():
+    try:
+        Feeds().get_feed('giberish')
+    except SellingApiServerException as br:
+        assert type(br) == SellingApiServerException
+        assert br.code == 500

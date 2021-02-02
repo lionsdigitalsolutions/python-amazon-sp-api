@@ -8,7 +8,7 @@ from sp_api.api.feeds.models.create_feed_document_response import CreateFeedDocu
 from sp_api.api.feeds.models.create_feed_response import CreateFeedResponse
 from sp_api.api.feeds.models.get_feed_document_response import GetFeedDocumentResponse
 from sp_api.api.feeds.models.get_feed_response import GetFeedResponse
-from sp_api.base import Client, sp_endpoint, Marketplaces, fill_query_params, SellingApiException
+from sp_api.base import Client, sp_endpoint, Marketplaces, fill_query_params
 
 import zlib
 
@@ -29,7 +29,8 @@ class Feeds(Client):
         """
         create_feed(self, feed_type: str, input_feed_document_id: str, **kwargs) -> CreateFeedResponse
 
-        Creates a feed. Encrypt and upload the contents of the feed document before calling this operation.
+        Creates a feed. Call `create_feed_document` to upload the feed first.
+        `submit_feed` combines both.
 
         **Usage Plan:**
 
@@ -96,14 +97,13 @@ class Feeds(Client):
         )
         if 200 <= upload.status_code < 300:
             return response
-        raise SellingApiException('Error uploading file')
+        from sp_api.base.exceptions import SellingApiException
+        raise SellingApiException(upload.headers)
 
     def submit_feed(self, feed_type, file, content_type='text/tsv', **kwargs) -> [CreateFeedDocumentResponse, CreateFeedResponse]:
         """
         submit_feed(self, feed_type: str, file: File or File like, content_type='text/tsv', **kwargs) -> [CreateFeedDocumentResponse, CreateFeedResponse]
-        This method combines `create_feed_document` and `create_feed`.
-
-        It uploads the encrypted file and sends the feed to amazon
+        Combines `create_feed_document` and `create_feed`, uploads the encrypted file and sends the feed to amazon.
 
         **Usage Plan:**
 
